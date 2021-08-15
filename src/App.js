@@ -8,24 +8,47 @@ import {
   transformSMA,
   replaceSpacesWithDashes
 } from './utilities/transformations'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const App = () => {
-  const { keywordText, search } = messages;
+  const {
+    KEYWORD_TEXT,
+    SEARCH,
+    API_KEY_LANDING_PAGE,
+    ALPHA_VANTAGE,
+    IBM
+  } = messages;
+
   const [keyword, setKeyword] = useState('');
   const [securitiesData, setSecuritiesData] = useState([]);
   const [selectedSecuritySymbol, setSelectedSecuritySymbol] = useState(null);
   const [selectedSecuritySymbol5MinuteData, setSelectedSecuritySymbol5MinuteData] = useState([]);
   const [selectedSecuritySymbol60MinuteData, setSelectedSecuritySymbol60MinuteData] = useState([]);
   const [selectedSecuritySymbolIndicatorSMAData, setSelectedSecuritySymbolIndicatorSMAData] = useState([]);
+  const [hasApiKey, setHasApiKey] = useState(false);
   const [apiKey, setApiKey] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [globalQuoteInfo, setGlobalQuoteInfo] = useState({});
 
-  // TODO: finish this logic
+  const getApiKeyRef = useRef();
+
+  // TODO: there's probably a better solution to handle the landing page
   useEffect(() => {
-    const apiKey = localStorage.getItem('API_KEY')
-    setApiKey(apiKey);
+    const maybeApiKey = retrieveApiKey();
+    if (maybeApiKey) {
+      setApiKey(maybeApiKey);
+      setHasApiKey(true);
+    }
   }, []);
+
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
+
+  const saveApiKey = apiKey => {
+    sessionStorage.setItem('API_KEY', apiKey);
+  };
+  const retrieveApiKey = () => sessionStorage.getItem('API_KEY');
 
   const getSecurities = (event) => {
     event.preventDefault();
@@ -169,20 +192,46 @@ const App = () => {
   ];
   const selectedSecuritySymbolIndicatorSMAOptions = {};
 
-
-
-  return (
+  const landing = (
     <>
       <form>
-        <label htmlFor="keyword">{keywordText}</label>
+        <label htmlFor="get-api-key"></label>
+        <input
+          type="text"
+          id="get-api-key"
+          ref={getApiKeyRef}
+        />
+        <button
+          onClick={event => {
+            event.preventDefault();
+            const apiKey = getApiKeyRef.current.value;
+            setHasApiKey(true);
+            setApiKey(apiKey);
+            saveApiKey(apiKey);
+          }}
+        >Continue</button>
+      </form>
+      <div>
+        {API_KEY_LANDING_PAGE}
+        <a href="https://www.alphavantage.co/support/#api-key">{ALPHA_VANTAGE}</a>
+      </div>
+    </>
+  );
+
+  const securitiesInterface = (
+    <>
+      <form>
+        <label htmlFor="keyword">{KEYWORD_TEXT}</label>
         <input
           type="text"
           id="keyword"
           onChange={event => setKeyword(event.target.value)}
+          placeholder={IBM}
+          value={keyword}
         ></input>
         <button
           onClick={getSecurities}
-        >{search}</button>
+        >{SEARCH}</button>
       </form>
       <MUIDataTable
         title="Securities"
@@ -202,13 +251,13 @@ const App = () => {
         );
       })}
       <MUIDataTable
-        title={`5 Minute Prices for ${selectedSecuritySymbol} with SMA`}
+        title={`5 Minute Prices for ${selectedSecuritySymbol}`}
         data={selectedSecuritySymbol5MinuteData}
         columns={selectedSecuritySymbolHistoricalPricesColumns}
         options={selectedSecuritySymbolHistoricalPricesOptions}
       />
       <MUIDataTable
-        title={`60 Minute Prices for ${selectedSecuritySymbol} with SMA`}
+        title={`60 Minute Prices for ${selectedSecuritySymbol}`}
         data={selectedSecuritySymbol60MinuteData}
         columns={selectedSecuritySymbolHistoricalPricesColumns}
         options={selectedSecuritySymbolHistoricalPricesOptions}
@@ -221,10 +270,11 @@ const App = () => {
       />
     </>
   );
+
+  return isLoading ? 'loading...' : hasApiKey ? securitiesInterface : landing;
 }
 
 export default App;
-
 
 // IMPROVEMENTS
   // choose styling approach, either CSS-in-JS (as with material ui), or as separate stylesheets (as with BEM styling, SASS)
