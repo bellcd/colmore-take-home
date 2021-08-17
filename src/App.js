@@ -1,6 +1,8 @@
 import './App.css';
 import MUIDataTable from "mui-datatables";
 import messages from './constants/messages';
+import Highcharts from 'highcharts'
+import HighchartsReact from 'highcharts-react-official'
 import {
   removeLeadingIntegersFromKeys,
   transformBestMatches,
@@ -9,6 +11,7 @@ import {
   replaceSpacesWithDashes
 } from './utilities/transformations'
 import { useState, useEffect, useRef } from 'react';
+import MyChart from './MyChart';
 
 const App = () => {
   const {
@@ -218,6 +221,75 @@ const App = () => {
     </>
   );
 
+  // useEffect(() => {
+  //   // const data = selectedSecuritySymbol5MinuteData;
+  //   const data = [{
+  //     "open": "143.0100",
+  //     "high": "143.0100",
+  //     "low": "143.0100",
+  //     "close": "143.0100",
+  //     "volume": "120",
+  //     "x": "2021-08-13 19:10:00"
+  //   }];
+
+  //     setTimeout(() => {
+  //       Highcharts.stockChart({
+  //         renderTo: 'container',
+  //         rangeSelector: {
+  //           selected: 1
+  //         },
+  //         title: {
+  //           text: 'AAPL Stock Price'
+  //         },
+  //         series: [{
+  //           type: 'candlestick',
+  //           data: data,
+  //         }]
+  //       });
+  //     }, 200);
+  // }, []);
+
+  const data = [
+    [
+      1566221400000, // timestamp
+      52.59
+    ],
+    [
+      1566307800000,
+      52.59
+    ],
+  ]
+
+  const options = {
+    // renderTo: 'container',
+    rangeSelector: {
+      selected: 1
+    },
+    title: {
+      text: 'AAPL Stock Price'
+    },
+    series: [{
+      // type: 'candlestick',
+      data: data,
+    }]
+  };
+
+  const chart = (
+    <div
+      style={{
+        width: '1000px',
+        height: '700px',
+        backgroundColor: 'blue'
+      }}
+    >
+      <HighchartsReact
+        highcharts={Highcharts}
+        options={options}
+        constructorType="stockChart"
+      />
+    </div>
+  );
+
   const securitiesInterface = (
     <>
       <form>
@@ -268,6 +340,7 @@ const App = () => {
         columns={selectedSecuritySymbolIndicatorSMAColumns}
         options={selectedSecuritySymbolIndicatorSMAOptions}
       />
+      {chart}
     </>
   );
 
