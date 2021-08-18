@@ -1,27 +1,25 @@
-import './App.css';
+import { useState } from 'react';
 import MUIDataTable from "mui-datatables";
-import messages from './constants/messages';
 import {
-  replaceSpacesWithDashes
-} from './utilities/transformations'
+  Switch,
+  Route
+} from "react-router-dom";
+import './App.css';
 import {
   getSecurities,
   getHistoricalPrices,
   getSMA,
   getGlobalQuote
 } from './services/securitiesService';
-import { useState } from 'react';
-import {
-  Switch,
-  Route
-} from "react-router-dom";
-import LandingPage from './LandingPage';
+import { useApikey } from './services/apikeyService';
 import {
   securitiesColumns,
   selectedSecuritySymbolHistoricalPricesColumns,
   selectedSecuritySymbolIndicatorSMAColumns
 } from './constants/tableColumns';
-import { useApikey } from './services/apikey';
+import messages from './constants/messages';
+import LandingPage from './LandingPage';
+import QuoteInfo from './QuoteInfo';
 
 const App = () => {
   const {
@@ -105,17 +103,9 @@ const App = () => {
         columns={securitiesColumns}
         options={securitiesOptions}
       />
-      {Object.entries(globalQuoteInfo).map(([key, value], index) => {
-        const keyWithoutWhitespace = replaceSpacesWithDashes(key);
-        return (
-          <div key={index} className="global-quote-info__container">
-            <div className={`global-quote-info__${keyWithoutWhitespace}`}>
-              <span className={`global-quote-info__${keyWithoutWhitespace}-label`}>{key}</span>
-              <span className={`global-quote-info__${keyWithoutWhitespace}-value`}>{value}</span>
-            </div>
-          </div>
-        );
-      })}
+      <QuoteInfo
+        quoteInfo={globalQuoteInfo}
+      />
       <MUIDataTable
         title={`5 Minute Prices for ${selectedSecuritySymbol}`}
         data={selectedSecuritySymbol5MinuteData}

@@ -1,13 +1,12 @@
-import React, { useEffect, useRef } from 'react';
-import messages from './constants/messages';
+import React, { useRef } from 'react';
 import {
   Redirect
 } from "react-router-dom";
 import {
   saveApikey,
-  retrieveApikey,
   useApikey
-} from './services/apikey';
+} from './services/apikeyService';
+import messages from './constants/messages';
 
 const LandingPage = ({
   setApikey,
