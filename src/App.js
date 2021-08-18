@@ -2,12 +2,14 @@ import './App.css';
 import MUIDataTable from "mui-datatables";
 import messages from './constants/messages';
 import {
-  removeLeadingIntegersFromKeys,
-  transformBestMatches,
-  transformHistoricalPrices,
-  transformSMA,
   replaceSpacesWithDashes
 } from './utilities/transformations'
+import {
+  getSecurities,
+  getHistoricalPrices,
+  getSMA,
+  getGlobalQuote
+} from './services/securitiesService';
 import { useState, useEffect, useRef } from 'react';
 
 const App = () => {
@@ -19,25 +21,38 @@ const App = () => {
     IBM
   } = messages;
 
+  // TODO: improvement, implement better state management, for easier extension
   const [keyword, setKeyword] = useState('');
   const [securitiesData, setSecuritiesData] = useState([]);
   const [selectedSecuritySymbol, setSelectedSecuritySymbol] = useState(null);
   const [selectedSecuritySymbol5MinuteData, setSelectedSecuritySymbol5MinuteData] = useState([]);
   const [selectedSecuritySymbol60MinuteData, setSelectedSecuritySymbol60MinuteData] = useState([]);
   const [selectedSecuritySymbolIndicatorSMAData, setSelectedSecuritySymbolIndicatorSMAData] = useState([]);
-  const [hasApiKey, setHasApiKey] = useState(false);
-  const [apiKey, setApiKey] = useState('');
+  const [hasApikey, setHasApikey] = useState(false);
+  const [apikey, setApikey] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [globalQuoteInfo, setGlobalQuoteInfo] = useState({});
+  const [hasError, setHasError] = useState(null);
+  const getApikeyRef = useRef();
 
-  const getApiKeyRef = useRef();
+  // TODO: improvement, individual error messages, ideally with an error logging service
+  const fetchData = (apiCall, setter, ...rest) => {
+    apiCall(...rest)
+      .then(response => {
+        setter(response);
+      })
+      .catch(error => {
+        setHasError(error);
+        console.log(error);
+      })
+  }
 
   // TODO: there's probably a better solution to handle the landing page
   useEffect(() => {
-    const maybeApiKey = retrieveApiKey();
-    if (maybeApiKey) {
-      setApiKey(maybeApiKey);
-      setHasApiKey(true);
+    const maybeApikey = retrieveApikey();
+    if (maybeApikey) {
+      setApikey(maybeApikey);
+      setHasApikey(true);
     }
   }, []);
 
@@ -45,60 +60,10 @@ const App = () => {
     setIsLoading(false);
   }, []);
 
-  const saveApiKey = apiKey => {
-    sessionStorage.setItem('API_KEY', apiKey);
+  const saveApikey = apikey => {
+    sessionStorage.setItem('API_KEY', apikey);
   };
-  const retrieveApiKey = () => sessionStorage.getItem('API_KEY');
-
-  const getSecurities = (event) => {
-    event.preventDefault();
-    const url = `https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${keyword}&apikey=${apiKey}`
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        setSecuritiesData(transformBestMatches(data.bestMatches));
-      })
-      // TODO: proper error handling
-      .catch(console.log)
-  };
-
-  const getHistoricalPrices = (symbol, interval, setterFn) => {
-    const url = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=${interval}&apikey=${apiKey}`
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        const timeSeriesData = data[`Time Series (${interval})`];
-        const transformedData = transformHistoricalPrices(timeSeriesData);
-        setterFn(transformedData);
-      })
-      // TODO: proper error handling
-      .catch(console.log)
-  };
-
-  const getSMA = (symbol, interval) => {
-    const url = `https://www.alphavantage.co/query?function=SMA&symbol=${symbol}&interval=${interval}&time_period=60&series_type=open&apikey=${apiKey}`;
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        // debugger;
-        const transformed = transformSMA(data['Technical Analysis: SMA']);
-        setSelectedSecuritySymbolIndicatorSMAData(transformed);
-      })
-      // TODO: proper error handling
-      .catch(console.log)
-  };
-
-  const getGlobalQuote = symbol => {
-    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        const transformedGlobalQuote = removeLeadingIntegersFromKeys(data['Global Quote'])
-        setGlobalQuoteInfo(transformedGlobalQuote);
-      })
-      .catch(console.log)
-  };
-
+  const retrieveApikey = () => sessionStorage.getItem('API_KEY');
 
   const securitiesColumns = [
     {
@@ -145,10 +110,10 @@ const App = () => {
     onRowSelectionChange: newRow => {
       const symbol = securitiesData[newRow[0].index].symbol;
       setSelectedSecuritySymbol(symbol);
-      getHistoricalPrices(symbol, '5min', setSelectedSecuritySymbol5MinuteData);
-      getHistoricalPrices(symbol, '60min', setSelectedSecuritySymbol60MinuteData);
-      getSMA(symbol, '5min');
-      getGlobalQuote(symbol);
+      fetchData(getHistoricalPrices, setSelectedSecuritySymbol5MinuteData, symbol, '5min', apikey);
+      fetchData(getHistoricalPrices, setSelectedSecuritySymbol60MinuteData, symbol, '60min', apikey);
+      fetchData(getSMA, setSelectedSecuritySymbolIndicatorSMAData, symbol, '5min', apikey);
+      fetchData(getGlobalQuote, setGlobalQuoteInfo, symbol, apikey);
     }
   };
 
@@ -199,15 +164,15 @@ const App = () => {
         <input
           type="text"
           id="get-api-key"
-          ref={getApiKeyRef}
+          ref={getApikeyRef}
         />
         <button
           onClick={event => {
             event.preventDefault();
-            const apiKey = getApiKeyRef.current.value;
-            setHasApiKey(true);
-            setApiKey(apiKey);
-            saveApiKey(apiKey);
+            const apikey = getApikeyRef.current.value;
+            setHasApikey(true);
+            setApikey(apikey);
+            saveApikey(apikey);
           }}
         >Continue</button>
       </form>
@@ -230,7 +195,10 @@ const App = () => {
           value={keyword}
         ></input>
         <button
-          onClick={getSecurities}
+          onClick={event => {
+            event.preventDefault();
+            fetchData(getSecurities, setSecuritiesData, keyword, apikey);
+          }}
         >{SEARCH}</button>
       </form>
       <MUIDataTable
@@ -271,7 +239,21 @@ const App = () => {
     </>
   );
 
-  return isLoading ? 'loading...' : hasApiKey ? securitiesInterface : landing;
+  const errorMessage = (
+    <div>{messages.ERROR_MESSAGE}</div>
+  );
+
+  let view;
+  if (isLoading) {
+    view = 'loading...';
+  } else if (hasError) {
+    view = errorMessage;
+  } else if (hasApikey) {
+    view = securitiesInterface;
+  } else {
+    view = landing;
+  }
+  return view;
 }
 
 export default App;

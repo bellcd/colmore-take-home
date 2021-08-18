@@ -3,7 +3,8 @@ const messages = {
   SEARCH: 'Search',
   API_KEY_LANDING_PAGE: 'Please input your API key for',
   ALPHA_VANTAGE: 'Alpha Vantage',
-  IBM: 'IBM'
+  IBM: 'IBM',
+  ERROR_MESSAGE: 'There was an error, please reload the page'
 };
 
 export default messages;
