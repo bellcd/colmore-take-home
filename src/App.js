@@ -40,6 +40,7 @@ const App = () => {
     apiCall(...rest)
       .then(response => {
         setter(response);
+        setIsLoading(false);
       })
       .catch(error => {
         setHasError(error);
@@ -108,6 +109,7 @@ const App = () => {
     filterType: 'checkbox',
     selectableRows: 'single',
     onRowSelectionChange: newRow => {
+      setIsLoading(true);
       const symbol = securitiesData[newRow[0].index].symbol;
       setSelectedSecuritySymbol(symbol);
       fetchData(getHistoricalPrices, setSelectedSecuritySymbol5MinuteData, symbol, '5min', apikey);
@@ -196,6 +198,7 @@ const App = () => {
         ></input>
         <button
           onClick={event => {
+            setIsLoading(true);
             event.preventDefault();
             fetchData(getSecurities, setSecuritiesData, keyword, apikey);
           }}
@@ -245,6 +248,7 @@ const App = () => {
 
   let view;
   if (isLoading) {
+    // TODO: improvement, better loading states, ideally component loaders
     view = 'loading...';
   } else if (hasError) {
     view = errorMessage;
@@ -261,4 +265,4 @@ export default App;
 // IMPROVEMENTS
   // choose styling approach, either CSS-in-JS (as with material ui), or as separate stylesheets (as with BEM styling, SASS)
   // polish styling
-  // loading states
+  // debouncing?
