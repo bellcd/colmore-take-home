@@ -16,12 +16,19 @@ import {
   Route
 } from "react-router-dom";
 import LandingPage from './LandingPage';
+import {
+  securitiesColumns,
+  selectedSecuritySymbolHistoricalPricesColumns,
+  selectedSecuritySymbolIndicatorSMAColumns
+} from './constants/tableColumns';
 
 const App = () => {
   const {
     KEYWORD_TEXT,
     SEARCH,
-    IBM
+    IBM,
+    INDICATORS,
+    SECURITIES
   } = messages;
 
   // TODO: improvement, implement better state management, for easier extension
@@ -52,45 +59,6 @@ const App = () => {
       })
   }
 
-  const securitiesColumns = [
-    {
-      name: "symbol",
-      label: "Symbol",
-    },
-    {
-      name: "name",
-      label: "Name",
-    },
-    {
-      name: "type",
-      label: "Type",
-    },
-    {
-      name: "region",
-      label: "Region",
-    },
-    {
-      name: "marketOpen",
-      label: "Market Open",
-    },
-    {
-      name: "marketClose",
-      label: "Market Close",
-    },
-    {
-      name: "timezone",
-      label: "Timezone",
-    },
-    {
-      name: "currency",
-      label: "Currency",
-    },
-    {
-      name: "matchScore",
-      label: "Match Score",
-    },
-  ];
-
   const securitiesOptions = {
     filterType: 'checkbox',
     selectableRows: 'single',
@@ -104,45 +72,7 @@ const App = () => {
       fetchData(getGlobalQuote, setGlobalQuoteInfo, symbol, apikey);
     }
   };
-
-  const selectedSecuritySymbolHistoricalPricesColumns = [
-    {
-      name: "timeStamp",
-      label: "Time Stamp",
-    },
-    {
-      name: "close",
-      label: "Close",
-    },
-    {
-      name: "high",
-      label: "High",
-    },
-    {
-      name: "low",
-      label: "Low",
-    },
-    {
-      name: "open",
-      label: "Open",
-    },
-    {
-      name: "volume",
-      label: "Volume",
-    },
-  ];
   const selectedSecuritySymbolHistoricalPricesOptions = {};
-
-  const selectedSecuritySymbolIndicatorSMAColumns = [
-    {
-      name: "timeStamp",
-      label: "Time Stamp",
-    },
-    {
-      name: "SMA",
-      label: "Simple Moving Average",
-    },
-  ];
   const selectedSecuritySymbolIndicatorSMAOptions = {};
 
   const securitiesInterface = (
@@ -165,7 +95,7 @@ const App = () => {
         >{SEARCH}</button>
       </form>
       <MUIDataTable
-        title="Securities"
+        title={SECURITIES}
         data={securitiesData}
         columns={securitiesColumns}
         options={securitiesOptions}
@@ -194,7 +124,7 @@ const App = () => {
         options={selectedSecuritySymbolHistoricalPricesOptions}
       />
       <MUIDataTable
-        title="Indicators"
+        title={INDICATORS}
         data={selectedSecuritySymbolIndicatorSMAData}
         columns={selectedSecuritySymbolIndicatorSMAColumns}
         options={selectedSecuritySymbolIndicatorSMAOptions}
@@ -202,16 +132,12 @@ const App = () => {
     </>
   );
 
-  const errorMessage = (
-    <div>{messages.ERROR_MESSAGE}</div>
-  );
-
   let view;
   if (isLoading) {
     // TODO: improvement, better loading states, ideally component loaders
     view = 'loading...';
   } else if (hasError) {
-    view = errorMessage;
+    view = <div>{messages.ERROR_MESSAGE}</div>
   } else if (hasApikey) {
     view = securitiesInterface;
   }

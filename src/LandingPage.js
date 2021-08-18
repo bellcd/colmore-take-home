@@ -14,6 +14,7 @@ const LandingPage = ({
   const {
     API_KEY_LANDING_PAGE,
     ALPHA_VANTAGE,
+    CONTINUE
   } = messages;
 
   const getApikeyRef = useRef();
@@ -50,7 +51,7 @@ const LandingPage = ({
             setApikey(apikey);
             saveApikey(apikey);
           }}
-        >Continue</button>
+        >{CONTINUE}</button>
       </form>
       <div>
         {API_KEY_LANDING_PAGE}
