@@ -10,7 +10,7 @@ import {
   getSMA,
   getGlobalQuote
 } from './services/securitiesService';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Switch,
   Route
@@ -21,6 +21,7 @@ import {
   selectedSecuritySymbolHistoricalPricesColumns,
   selectedSecuritySymbolIndicatorSMAColumns
 } from './constants/tableColumns';
+import { useApikey } from './services/apikey';
 
 const App = () => {
   const {
@@ -44,7 +45,11 @@ const App = () => {
   const [globalQuoteInfo, setGlobalQuoteInfo] = useState({});
   const [hasError, setHasError] = useState(null);
 
-  useEffect(() => setIsLoading(false), []);
+  useApikey({
+    setApikey,
+    setHasApikey,
+    setIsLoading
+  });
 
   // TODO: improvement, individual error messages, ideally with an error logging service
   const fetchData = (apiCall, setter, ...rest) => {
@@ -88,8 +93,8 @@ const App = () => {
         ></input>
         <button
           onClick={event => {
-            setIsLoading(true);
             event.preventDefault();
+            setIsLoading(true);
             fetchData(getSecurities, setSecuritiesData, keyword, apikey);
           }}
         >{SEARCH}</button>

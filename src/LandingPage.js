@@ -3,6 +3,11 @@ import messages from './constants/messages';
 import {
   Redirect
 } from "react-router-dom";
+import {
+  saveApikey,
+  retrieveApikey,
+  useApikey
+} from './services/apikey';
 
 const LandingPage = ({
   setApikey,
@@ -19,20 +24,11 @@ const LandingPage = ({
 
   const getApikeyRef = useRef();
 
-  useEffect(() => {
-    const maybeApikey = retrieveApikey();
-    if (maybeApikey) {
-      setApikey(maybeApikey);
-      setHasApikey(true);
-    }
-  }, []);
-
-  useEffect(() => setIsLoading(false), []);
-
-  const saveApikey = apikey => {
-    sessionStorage.setItem('API_KEY', apikey);
-  };
-  const retrieveApikey = () => sessionStorage.getItem('API_KEY');
+  useApikey({
+    setApikey,
+    setHasApikey,
+    setIsLoading
+  });
 
   const landing = (
     <>
