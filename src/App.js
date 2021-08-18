@@ -10,14 +10,17 @@ import {
   getSMA,
   getGlobalQuote
 } from './services/securitiesService';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import {
+  Switch,
+  Route
+} from "react-router-dom";
+import LandingPage from './LandingPage';
 
 const App = () => {
   const {
     KEYWORD_TEXT,
     SEARCH,
-    API_KEY_LANDING_PAGE,
-    ALPHA_VANTAGE,
     IBM
   } = messages;
 
@@ -33,7 +36,8 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [globalQuoteInfo, setGlobalQuoteInfo] = useState({});
   const [hasError, setHasError] = useState(null);
-  const getApikeyRef = useRef();
+
+  useEffect(() => setIsLoading(false), []);
 
   // TODO: improvement, individual error messages, ideally with an error logging service
   const fetchData = (apiCall, setter, ...rest) => {
@@ -47,24 +51,6 @@ const App = () => {
         console.log(error);
       })
   }
-
-  // TODO: there's probably a better solution to handle the landing page
-  useEffect(() => {
-    const maybeApikey = retrieveApikey();
-    if (maybeApikey) {
-      setApikey(maybeApikey);
-      setHasApikey(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
-
-  const saveApikey = apikey => {
-    sessionStorage.setItem('API_KEY', apikey);
-  };
-  const retrieveApikey = () => sessionStorage.getItem('API_KEY');
 
   const securitiesColumns = [
     {
@@ -159,32 +145,6 @@ const App = () => {
   ];
   const selectedSecuritySymbolIndicatorSMAOptions = {};
 
-  const landing = (
-    <>
-      <form>
-        <label htmlFor="get-api-key"></label>
-        <input
-          type="text"
-          id="get-api-key"
-          ref={getApikeyRef}
-        />
-        <button
-          onClick={event => {
-            event.preventDefault();
-            const apikey = getApikeyRef.current.value;
-            setHasApikey(true);
-            setApikey(apikey);
-            saveApikey(apikey);
-          }}
-        >Continue</button>
-      </form>
-      <div>
-        {API_KEY_LANDING_PAGE}
-        <a href="https://www.alphavantage.co/support/#api-key">{ALPHA_VANTAGE}</a>
-      </div>
-    </>
-  );
-
   const securitiesInterface = (
     <>
       <form>
@@ -254,10 +214,26 @@ const App = () => {
     view = errorMessage;
   } else if (hasApikey) {
     view = securitiesInterface;
-  } else {
-    view = landing;
   }
-  return view;
+
+  return (
+    <div>
+      <Switch>
+        <Route path="/home">
+          {view}
+        </Route>
+        <Route path="/">
+          <LandingPage
+            setApikey={setApikey}
+            hasApikey={hasApikey}
+            setHasApikey={setHasApikey}
+            isLoading={isLoading}
+            setIsLoading={setIsLoading}
+          />
+        </Route>
+      </Switch>
+    </div>
+  );
 }
 
 export default App;
