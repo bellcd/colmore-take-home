@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useReducer } from 'react';
 import MUIDataTable from "mui-datatables";
 import {
   Switch,
@@ -20,6 +20,9 @@ import {
 import messages from './constants/messages';
 import LandingPage from './LandingPage';
 import QuoteInfo from './QuoteInfo';
+import { rootReducer } from './redux/reducers';
+import { actions } from './redux/actions';
+import { initialState } from './redux/state';
 
 const App = () => {
   const {
@@ -30,23 +33,25 @@ const App = () => {
     SECURITIES
   } = messages;
 
-  // TODO: improvement, implement better state management, for easier extension
-  const [keyword, setKeyword] = useState('');
-  const [securitiesData, setSecuritiesData] = useState([]);
-  const [selectedSecuritySymbol, setSelectedSecuritySymbol] = useState(null);
-  const [selectedSecuritySymbol5MinuteData, setSelectedSecuritySymbol5MinuteData] = useState([]);
-  const [selectedSecuritySymbol60MinuteData, setSelectedSecuritySymbol60MinuteData] = useState([]);
-  const [selectedSecuritySymbolIndicatorSMAData, setSelectedSecuritySymbolIndicatorSMAData] = useState([]);
-  const [hasApikey, setHasApikey] = useState(false);
-  const [apikey, setApikey] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [globalQuoteInfo, setGlobalQuoteInfo] = useState({});
-  const [hasError, setHasError] = useState(null);
+  const [state, dispatch] = useReducer(rootReducer, initialState);
+  const {
+    keyword,
+    securitiesData,
+    selectedSecuritySymbol,
+    selectedSecuritySymbol5MinuteData,
+    selectedSecuritySymbol60MinuteData,
+    selectedSecuritySymbolIndicatorSMAData,
+    hasApikey,
+    apikey,
+    isLoading,
+    globalQuoteInfo,
+    hasError
+  } = state;
 
   useApikey({
-    setApikey,
-    setHasApikey,
-    setIsLoading
+    setApikey: payload => dispatch({ type: actions.setApikey, payload }),
+    setHasApikey: payload => dispatch({ type: actions.setHasApikey, payload }),
+    setIsLoading: payload => dispatch({ type: actions.setIsLoading, payload })
   });
 
   // TODO: improvement, individual error messages, ideally with an error logging service
@@ -54,10 +59,10 @@ const App = () => {
     apiCall(...rest)
       .then(response => {
         setter(response);
-        setIsLoading(false);
+        dispatch({ type: actions.setIsLoading, payload: false });
       })
       .catch(error => {
-        setHasError(error);
+        dispatch({ type: actions.setHasError, payload: error })
         console.log(error);
       })
   }
@@ -66,13 +71,16 @@ const App = () => {
     filterType: 'checkbox',
     selectableRows: 'single',
     onRowSelectionChange: newRow => {
-      setIsLoading(true);
+      dispatch({ type: actions.setIsLoading, payload: true });
       const symbol = securitiesData[newRow[0].index].symbol;
-      setSelectedSecuritySymbol(symbol);
-      fetchData(getHistoricalPrices, setSelectedSecuritySymbol5MinuteData, symbol, '5min', apikey);
-      fetchData(getHistoricalPrices, setSelectedSecuritySymbol60MinuteData, symbol, '60min', apikey);
-      fetchData(getSMA, setSelectedSecuritySymbolIndicatorSMAData, symbol, '5min', apikey);
-      fetchData(getGlobalQuote, setGlobalQuoteInfo, symbol, apikey);
+      dispatch({
+        type: actions.setSelectedSecuritySymbol,
+        payload: symbol
+      });
+      fetchData(getHistoricalPrices, payload => dispatch({ type: actions.setSelectedSecuritySymbol5MinuteData, payload }), symbol, '5min', apikey);
+      fetchData(getHistoricalPrices, payload => dispatch({ type: actions.setSelectedSecuritySymbol60MinuteData, payload }), symbol, '60min', apikey);
+      fetchData(getSMA, payload => dispatch({ type: actions.setSelectedSecuritySymbolIndicatorSMAData, payload }), symbol, '5min', apikey);
+      fetchData(getGlobalQuote, payload => dispatch({ type: actions.setGlobalQuoteInfo, payload }), symbol, apikey);
     }
   };
   const selectedSecuritySymbolHistoricalPricesOptions = {};
@@ -85,15 +93,20 @@ const App = () => {
         <input
           type="text"
           id="keyword"
-          onChange={event => setKeyword(event.target.value)}
+          onChange={event => {
+            dispatch({
+              type: actions.setKeyword,
+              payload: event.target.value
+            });
+          }}
           placeholder={IBM}
           value={keyword}
         ></input>
         <button
           onClick={event => {
             event.preventDefault();
-            setIsLoading(true);
-            fetchData(getSecurities, setSecuritiesData, keyword, apikey);
+            dispatch({ type: actions.setIsLoading, payload: true });
+            fetchData(getSecurities, payload => dispatch({ type: actions.setSecuritiesData, payload }), keyword, apikey);
           }}
         >{SEARCH}</button>
       </form>
@@ -145,11 +158,11 @@ const App = () => {
         </Route>
         <Route path="/">
           <LandingPage
-            setApikey={setApikey}
+            setApikey={payload => dispatch({ type: actions.setApikey, payload })}
             hasApikey={hasApikey}
-            setHasApikey={setHasApikey}
+            setHasApikey={payload => dispatch({ type: actions.setHasApikey, payload })}
             isLoading={isLoading}
-            setIsLoading={setIsLoading}
+            setIsLoading={payload => dispatch({ type: actions.setIsLoading, payload })}
           />
         </Route>
       </Switch>
